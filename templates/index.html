@@ -1,0 +1,310 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home Controller</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 40px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .device {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: linear-gradient(145deg, #f0f0f0, #ffffff);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+        }
+
+        .device:hover { transform: translateY(-2px); }
+
+        .device-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .switch-container {
+            position: relative;
+            display: inline-block;
+            width: 80px;
+            height: 40px;
+        }
+
+        .switch {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(145deg, #ddd, #f1f1f1);
+            border-radius: 40px;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .switch:before {
+            position: absolute;
+            content: "";
+            height: 32px; width: 32px;
+            left: 4px; top: 4px;
+            background: linear-gradient(145deg, #fff, #f5f5f5);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .switch-input { opacity: 0; width: 0; height: 0; }
+
+        .switch-input:checked + .switch {
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+        }
+
+        .switch-input:checked + .switch:before {
+            transform: translateX(40px);
+        }
+
+        .status {
+            margin-top: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .status.on {
+            background: rgba(76, 175, 80, 0.2);
+            color: #2e7d32;
+        }
+
+        .status.off {
+            background: rgba(158, 158, 158, 0.2);
+            color: #424242;
+        }
+
+        .config-section {
+            margin-top: 40px;
+            text-align: left;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .save-btn {
+            background: linear-gradient(145deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .error { color: #d32f2f; font-size: 12px; margin-top: 5px; }
+        .success { color: #2e7d32; font-size: 12px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Smart Home</h1>
+        
+        <div class="device">
+            <div class="device-name">
+                <span>💡</span>
+                TP-Link Switch
+            </div>
+            <label class="switch-container">
+                <input type="checkbox" class="switch-input" id="tplink-switch">
+                <span class="switch"></span>
+            </label>
+            <div class="status off" id="tplink-status">OFF</div>
+        </div>
+
+        <div class="device">
+            <div class="device-name">
+                <span>📺</span>
+                LG WebOS TV Screen
+            </div>
+            <label class="switch-container">
+                <input type="checkbox" class="switch-input" id="tv-switch">
+                <span class="switch"></span>
+            </label>
+            <div class="status off" id="tv-status">OFF</div>
+        </div>
+
+        <div class="config-section">
+            <h3>Device Configuration</h3>
+            
+            <div class="input-group">
+                <label>TP-Link Switch IP</label>
+                <input type="text" id="tplink-ip" placeholder="192.168.1.100">
+            </div>
+            
+            <div class="input-group">
+                <label>WebOS TV IP</label>
+                <input type="text" id="tv-ip" placeholder="192.168.1.101">
+            </div>
+            
+            <button class="save-btn" onclick="saveConfig()">Save Configuration</button>
+            <div id="config-message"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load configuration on startup
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const config = await response.json();
+                document.getElementById('tplink-ip').value = config.tplink_ip || '';
+                document.getElementById('tv-ip').value = config.tv_ip || '';
+            } catch (error) {
+                console.error('Failed to load config:', error);
+            }
+        }
+
+        // Save configuration
+        async function saveConfig() {
+            const config = {
+                tplink_ip: document.getElementById('tplink-ip').value,
+                tv_ip: document.getElementById('tv-ip').value
+            };
+
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                
+                const result = await response.json();
+                showMessage(result.message, 'success');
+            } catch (error) {
+                showMessage('Failed to save configuration', 'error');
+            }
+        }
+
+        // Control devices
+        async function controlDevice(device, action) {
+            try {
+                const response = await fetch(`/api/${device}/${action}`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    updateStatus(device, result.state);
+                    return true;
+                } else {
+                    alert(`Error: ${result.error}`);
+                    return false;
+                }
+            } catch (error) {
+                alert(`Failed to control ${device}`);
+                return false;
+            }
+        }
+
+        // Update device status display
+        function updateStatus(device, isOn) {
+            const statusEl = document.getElementById(`${device}-status`);
+            statusEl.textContent = isOn ? 'ON' : 'OFF';
+            statusEl.className = `status ${isOn ? 'on' : 'off'}`;
+        }
+
+        // Show messages
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('config-message');
+            messageDiv.textContent = message;
+            messageDiv.className = type;
+            setTimeout(() => {
+                messageDiv.textContent = '';
+                messageDiv.className = '';
+            }, 3000);
+        }
+
+        // Event listeners
+        document.getElementById('tplink-switch').addEventListener('change', async function() {
+            const action = this.checked ? 'on' : 'off';
+            const success = await controlDevice('tplink', action);
+            if (!success) {
+                this.checked = !this.checked;
+            }
+        });
+
+        document.getElementById('tv-switch').addEventListener('change', async function() {
+            const action = this.checked ? 'screen_on' : 'screen_off';
+            const success = await controlDevice('tv', action);
+            if (!success) {
+                this.checked = !this.checked;
+            }
+        });
+
+        // Initialize
+        loadConfig();
+        
+        // Load device states every 30 seconds
+        setInterval(async () => {
+            try {
+                await controlDevice('tplink', 'status');
+                await controlDevice('tv', 'status');
+            } catch (error) {
+                console.error('Status update failed:', error);
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

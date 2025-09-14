@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  smart-home:
+    build: .
+    container_name: smart-home-controller
+    restart: unless-stopped
+    ports:
+      - "8989:5000"
+    network_mode: host  # Required for local device discovery
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - PYTHONUNBUFFERED=1
+      - TPLINK_IP=192.168.4.52
+      - TV_IP=192.168.4.51
+      - TV_MAC=c0:d7:aa:1d:a6:7e
+      - CONSUL_HOST=consul.service.dc1.consul
+      - CONSUL_PORT=8500
+    # Configuration now stored in Consul - remove local volume
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: Add a reverse proxy for HTTPS and custom domain
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: smart-home-nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - smart-home
