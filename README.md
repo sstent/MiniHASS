@@ -51,3 +51,25 @@ GET /health
 ### Docker Deployment
 - Removed local volume for config storage
 - Requires network access to Consul cluster
+
+### Continuous Integration
+We use GitHub Actions to automatically build and push Docker images to GitHub Container Registry.
+
+#### Workflow Details
+- Triggers on pushes to main branch
+- Builds Docker image using the Dockerfile
+- Pushes image to GHCR with two tags: `latest` and commit SHA
+
+#### Using the Image
+```yaml
+# Example docker-compose snippet
+services:
+  smart-home:
+    image: ghcr.io/your-username/your-repo:latest
+    # ... rest of config
+```
+
+#### Status Badge
+[![Build and Push Docker Image](https://github.com/OWNER/REPO/actions/workflows/container-build.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/container-build.yml)
+
+> Replace OWNER/REPO with your GitHub username and repository name
