@@ -10,11 +10,11 @@ services:
     network_mode: host  # Required for local device discovery
     environment:
       - FLASK_ENV=development
-      - FLASK_DEBUG=1
+      - FLASK_DEBUG=0
       - PYTHONUNBUFFERED=1
-      - TPLINK_IP=192.168.4.52
-      - TV_IP=192.168.4.51
-      - TV_MAC=c0:d7:aa:1d:a6:7e
+      - TPLINK_IP=192.168.1.52
+      - TV_IP=192.168.1.51
+      - TV_MAC=c0:d7:aa:aa:bb:cc
       - CONSUL_HOST=consul.service.dc1.consul
       - CONSUL_PORT=8500
     # Configuration now stored in Consul - remove local volume
