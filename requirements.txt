@@ -2,5 +2,5 @@ flask==2.3.3
 websockets==12.0
 requests==2.31.0
 gunicorn==21.2.0
-aiowebostv==0.8.0
+aiowebostv==0.7.5
 python-consul==1.1.0

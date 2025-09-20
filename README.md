@@ -73,3 +73,61 @@ services:
 [![Build and Push Docker Image](https://github.com/OWNER/REPO/actions/workflows/container-build.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/container-build.yml)
 
 > Replace OWNER/REPO with your GitHub username and repository name
+
+### Nomad Deployment
+For production deployments, use this Nomad job specification:
+
+```hcl
+job "minihass" {
+  datacenters = ["dc1"]
+
+  group "smart-home" {
+    network {
+      mode = "host"
+      port "http" {
+        to = 5000
+      }
+    }
+
+    service {
+      name = "minihass"
+      port = "http"
+      
+      check {
+        type     = "http"
+        path     = "/health"
+        interval = "30s"
+        timeout  = "5s"
+      }
+    }
+
+    task "app" {
+      driver = "docker"
+
+      config {
+        image = "ghcr.io/your-username/your-repo:latest"
+        ports = ["http"]
+      }
+
+      env {
+        CONSUL_HOST = "consul.service.dc1.consul"
+        CONSUL_PORT = "8500"
+        TPLINK_IP   = "192.168.1.100"
+        TV_IP       = "192.168.1.101"
+        TV_MAC      = "AA:BB:CC:DD:EE:FF"
+      }
+
+      resources {
+        cpu    = 500
+        memory = 256
+      }
+    }
+  }
+}
+```
+
+#### Deployment Steps:
+1. Install and configure Nomad cluster
+2. Update environment variables in the job file
+3. Run: `nomad job run minihass.nomad.hcl`
+4. Access the app at: `http://<nomad-node-ip>:5000`

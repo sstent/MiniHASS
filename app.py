@@ -21,9 +21,14 @@ import time
 import os
 import sys
 
+from aiowebostv import WebOsClient, endpoints as ep
+
+# Add missing endpoint
+ep.GET_POWER_STATE = "com.webos.service.tvpower/power/getPowerState"
+
 # Configure logging for container
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout)
@@ -171,25 +176,60 @@ class WebOSTV:
             
     async def _execute_command(self, command):
         """Execute TV command with automatic connection handling"""
-        from aiowebostv import WebOsClient
+        client = None
         try:
             client_key = self.load_client_key()
-            async with WebOsClient(self.ip, client_key) as client:
-                # If we have a new client key after connection, save it
-                if client.client_key and client.client_key != client_key:
-                    self.save_client_key(client.client_key)
+            logger.debug(f"Attempting WebOS connection to {self.ip} with client key: {client_key}")
+            
+            # Handle both context manager and manual connection for library compatibility
+            client = WebOsClient(self.ip, client_key)
+            if hasattr(client, '__aenter__'):
+                # Use context manager if available
+                async with client as client:
+                    return await self._handle_client_commands(client, client_key, command)
+            else:
+                # Manual connection for older library versions
+                await client.connect()
+                client.connected = True
+                result = await self._handle_client_commands(client, client_key, command)
+                await client.disconnect()
+                client.connected = False
+                return result
                 
-                if command == "turn_off":
-                    await client.turn_off()
-                    return True
-                elif command == "turn_on":
-                    await client.turn_on()
-                    return True
-                elif command == "get_power":
-                    return client.power_state == "on"
         except Exception as e:
-            logger.error(f"WebOS TV error: {e}")
+            logger.error(f"WebOS TV error: {e}", exc_info=True)
             return None
+        finally:
+            # Ensure cleanup if manual connection was used
+            if client and not hasattr(client, '__aenter__') and getattr(client, 'connected', False):
+                await client.disconnect()
+
+    async def _handle_client_commands(self, client, original_key, command):
+        """Handle TV commands after successful connection"""
+        logger.debug(f"Connected to WebOS TV. Client key: {client.client_key}")
+        
+        # Save new client key if generated
+        if client.client_key and client.client_key != original_key:
+            logger.info(f"Saving new client key for TV at {self.ip}")
+            self.save_client_key(client.client_key)
+        
+        # Execute requested command using screen-specific methods
+        if command == "turn_off":
+            logger.debug("Sending turn_off_screen command")
+            result = await client.command("request", ep.TURN_OFF_SCREEN)
+            logger.debug(f"Turn off command result: {result}, type: {type(result)}")
+            return True
+        elif command == "turn_on":
+            logger.debug("Sending turn_on_screen command")
+            await client.command("request", ep.TURN_ON_SCREEN)
+            return True
+        elif command == "get_power":
+            logger.debug("Getting screen state")
+            # Use proper method to get screen state
+            return await self._get_screen_state(client)
+        
+        logger.warning(f"Unknown command received: {command}")
+        return None
             
     async def turn_screen_off(self):
         """Turn off TV screen"""
@@ -200,8 +240,23 @@ class WebOSTV:
         return await self._execute_command("turn_on")
             
     async def get_power_state(self):
-        """Get TV power state"""
+        """Get TV screen state"""
         return await self._execute_command("get_power")
+
+    async def _get_screen_state(self, client):
+        try:
+            result = await client.request(ep.GET_POWER_STATE)
+            power_state = result.get('state')
+            logger.debug(f"Raw power state: {power_state}")
+            
+            if power_state in ["Active", "Screen On"]:
+                return True
+            elif power_state in ["Power Off", "Screen Off"]:
+                return False
+            return None
+        except Exception as e:
+            logger.error(f"Error getting screen state: {e}")
+            return None
 
 
 def update_device_state(device, state):
