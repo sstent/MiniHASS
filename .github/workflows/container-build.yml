@@ -7,13 +7,16 @@ on:
       - main
     paths:
       - 'app.py'
-      - 'Dockerfile'
+      - 'dockerfile'
       - 'requirements.txt'
       - 'docker-compose.yml'
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
     permissions:
       contents: read
       packages: write
@@ -32,30 +35,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Create multi-arch Dockerfile
-        run: |
-          cat > Dockerfile <<EOF
-          FROM --platform=\$BUILDPLATFORM python:3.11-slim as builder
-
-          WORKDIR /app
-          COPY requirements.txt .
-          RUN pip install --no-cache-dir -r requirements.txt
-
-          FROM python:3.11-slim
-          WORKDIR /app
-          COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-          COPY --from=builder /usr/local/bin /usr/local/bin
-          COPY . .
-
-          CMD ["python", "app.py"]
-          EOF
 
       - name: Build and push multi-arch Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/${{ matrix.arch }}
+          build-args: |
+            TARGETARCH=${{ matrix.arch }}
           tags: |
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ github.sha }}

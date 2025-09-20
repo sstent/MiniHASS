@@ -27,6 +27,7 @@ job "minihass" {
       config {
         image = "ghcr.io/sstent/MiniHASS:latest"
         ports = ["http"]
+        platform = "linux/${attr.cpu.arch}"
       }
 
       env {
