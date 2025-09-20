@@ -1,5 +1,6 @@
 # MiniHass - Smart Home Controller
 
+
 ## Configuration Storage in Consul
 
 The application now uses Consul for centralized configuration management. All settings and TV credentials are stored in Consul's key-value store.
